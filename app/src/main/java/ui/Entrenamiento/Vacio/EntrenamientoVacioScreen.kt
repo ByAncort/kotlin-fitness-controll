@@ -9,8 +9,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -19,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import model.EjercicioItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,9 +30,13 @@ fun EntrenamientoVacioScreen(
 ) {
     val nombreEntrenamiento by viewModel.nombreEntrenamiento
     val ejercicios by viewModel.ejercicios
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // 🎨 Paleta tipo Tailwind Dark
-    val fondo = Color(0xFF0f172a)
+    val fondo = Brush.verticalGradient(
+        listOf(Color(0xFF0f172a), Color(0xFF1e293b))
+    )
     val cardColor = Color(0xFF1e293b)
     val borderColor = Color(0xFF334155)
     val textPrimary = Color(0xFFe2e8f0)
@@ -39,11 +44,12 @@ fun EntrenamientoVacioScreen(
     val accent = Color(0xFF3b82f6)
 
     Scaffold(
-        containerColor = fondo,
+        containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Nuevo Entrenamiento", color = textPrimary) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = cardColor),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1e293b)),
                 navigationIcon = {
                     IconButton(onClick = onCancelar) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = accent)
@@ -51,7 +57,15 @@ fun EntrenamientoVacioScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = { viewModel.guardarEntrenamiento(onGuardarEntrenamiento) },
+                        onClick = {
+                            viewModel.guardarEntrenamientoTemporal()
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Entrenamiento guardado exitosamente 💪",
+                                    withDismissAction = true
+                                )
+                            }
+                        },
                         enabled = nombreEntrenamiento.isNotBlank() && ejercicios.isNotEmpty()
                     ) {
                         Icon(Icons.Default.Save, contentDescription = "Guardar", tint = accent)
@@ -64,15 +78,18 @@ fun EntrenamientoVacioScreen(
                 onClick = { viewModel.agregarEjercicio() },
                 containerColor = accent,
                 icon = { Icon(Icons.Default.Add, contentDescription = "Agregar", tint = Color.White) },
-                text = { Text("Agregar Ejercicio", color = Color.White) }
+                text = { Text("Agregar Ejercicio", color = Color.White, fontWeight = FontWeight.Bold) },
+                shape = RoundedCornerShape(16.dp),
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
             )
         }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .padding(innerPadding)
-                .padding(16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .background(fondo)
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
 
@@ -81,17 +98,18 @@ fun EntrenamientoVacioScreen(
                 onValueChange = viewModel::onNombreChange,
                 label = { Text("Nombre del entrenamiento", color = textSecondary) },
                 placeholder = { Text("Ej: Rutina de pecho, Full body...", color = textSecondary) },
-                leadingIcon = { Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = accent) },
+                leadingIcon = {
+                    Icon(Icons.Default.FitnessCenter, contentDescription = null, tint = accent)
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = accent,
                     unfocusedBorderColor = borderColor,
                     cursorColor = accent,
                     focusedTextColor = textPrimary,
                     unfocusedTextColor = textPrimary,
-                    focusedLabelColor = accent,
-                    unfocusedLabelColor = textSecondary,
                     focusedContainerColor = cardColor,
                     unfocusedContainerColor = cardColor
                 )
@@ -99,7 +117,10 @@ fun EntrenamientoVacioScreen(
 
             Text(
                 text = "Ejercicios",
-                style = MaterialTheme.typography.titleMedium.copy(color = textPrimary, fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.titleMedium.copy(
+                    color = textPrimary,
+                    fontWeight = FontWeight.Bold
+                )
             )
 
             if (ejercicios.isEmpty()) {
@@ -110,7 +131,7 @@ fun EntrenamientoVacioScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No hay ejercicios agregados",
+                        text = "No hay ejercicios agregados todavía",
                         style = MaterialTheme.typography.bodyMedium.copy(color = textSecondary)
                     )
                 }
@@ -131,115 +152,6 @@ fun EntrenamientoVacioScreen(
                             borderColor = borderColor
                         )
                     }
-                }
-            }
-
-            Card(
-                colors = CardDefaults.cardColors(containerColor = cardColor),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Resumen",
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            color = textPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "${ejercicios.size} ejercicios agregados",
-                        color = textSecondary
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun EjercicioCardDark(
-    ejercicio: EjercicioItem,
-    onEliminar: () -> Unit,
-    onEjercicioChange: (EjercicioItem) -> Unit,
-    cardColor: Color,
-    accent: Color,
-    textPrimary: Color,
-    textSecondary: Color,
-    borderColor: Color
-) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = cardColor),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Ejercicio ${ejercicio.id}",
-                    style = MaterialTheme.typography.titleSmall.copy(color = textPrimary, fontWeight = FontWeight.Bold)
-                )
-                IconButton(onClick = onEliminar, modifier = Modifier.size(24.dp)) {
-                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color(0xFFef4444))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = ejercicio.nombre,
-                onValueChange = { onEjercicioChange(ejercicio.copy(nombre = it)) },
-                label = { Text("Nombre del ejercicio", color = textSecondary) },
-                placeholder = { Text("Ej: Press de banca, Sentadillas...", color = textSecondary) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = accent,
-                    unfocusedBorderColor = borderColor,
-                    focusedTextColor = textPrimary,
-                    unfocusedTextColor = textPrimary,
-                    cursorColor = accent,
-                    focusedContainerColor = cardColor,
-                    unfocusedContainerColor = cardColor
-                )
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                listOf(
-                    Triple("Series", ejercicio.series) { s: String -> ejercicio.copy(series = s) },
-                    Triple("Reps", ejercicio.repeticiones) { s: String -> ejercicio.copy(repeticiones = s) },
-                    Triple("Peso (kg)", ejercicio.peso) { s: String -> ejercicio.copy(peso = s) }
-                ).forEach { (label, value, update) ->
-                    OutlinedTextField(
-                        value = value,
-                        onValueChange = {
-                            if (it.all { c -> c.isDigit() || (label.contains("Peso") && c == '.') })
-                                onEjercicioChange(update(it))
-                        },
-                        label = { Text(label, color = textSecondary) },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = if (label.contains("Peso")) KeyboardType.Decimal else KeyboardType.Number
-                        ),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = accent,
-                            unfocusedBorderColor = borderColor,
-                            focusedTextColor = textPrimary,
-                            unfocusedTextColor = textPrimary,
-                            cursorColor = accent,
-                            focusedContainerColor = cardColor,
-                            unfocusedContainerColor = cardColor
-                        )
-                    )
                 }
             }
         }

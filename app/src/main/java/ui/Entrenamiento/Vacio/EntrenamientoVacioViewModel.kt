@@ -1,32 +1,27 @@
 package ui.Entrenamiento.Vacio
 
+import android.app.Application
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import data.local.EntrenamientoDatabase
 import kotlinx.coroutines.launch
+import model.EjercicioEntity
+import model.EjercicioItem
+import model.EntrenamientoEntity
 
-data class EjercicioItem(
-    val id: String,
-    var nombre: String = "",
-    var series: String = "3",
-    var repeticiones: String = "12",
-    var peso: String = "0"
-)
+class EntrenamientoVacioViewModel(
+    app: Application
+) : AndroidViewModel(app) {
 
-class EntrenamientoVacioViewModel : ViewModel() {
+    private val db = EntrenamientoDatabase.getInstance(app)
+    private val dao = db.entrenamientoDao()
 
     var nombreEntrenamiento = mutableStateOf("")
         private set
 
-    var ejercicios = mutableStateOf<List<EjercicioItem>>(emptyList())
+    var ejercicios = mutableStateOf<List<EjercicioItem>>(listOf(EjercicioItem(id = "1")))
         private set
-
-    init {
-        // Agrega un ejercicio inicial por defecto
-        if (ejercicios.value.isEmpty()) {
-            ejercicios.value = listOf(EjercicioItem(id = "1"))
-        }
-    }
 
     fun onNombreChange(nuevoNombre: String) {
         nombreEntrenamiento.value = nuevoNombre
@@ -47,13 +42,33 @@ class EntrenamientoVacioViewModel : ViewModel() {
         }
     }
 
-    fun guardarEntrenamiento(
-        onGuardarEntrenamiento: (String, List<EjercicioItem>) -> Unit
-    ) {
+    fun guardarEntrenamientoTemporal() {
         viewModelScope.launch {
-            if (nombreEntrenamiento.value.isNotBlank() && ejercicios.value.isNotEmpty()) {
-                onGuardarEntrenamiento(nombreEntrenamiento.value, ejercicios.value)
+            if (nombreEntrenamiento.value.isNotBlank()) {
+                val entrenamiento = EntrenamientoEntity(nombre = nombreEntrenamiento.value)
+                val ejerciciosEntity = ejercicios.value.map {
+                    EjercicioEntity(
+                        entrenamientoId = 0,
+                        nombre = it.nombre,
+                        series = it.series,
+                        repeticiones = it.repeticiones,
+                        peso = it.peso
+                    )
+                }
+                dao.guardarEntrenamientoConEjercicios(entrenamiento, ejerciciosEntity)
             }
+        }
+    }
+
+    fun obtenerEntrenamientos(onResult: (List<EntrenamientoEntity>) -> Unit) {
+        viewModelScope.launch {
+            onResult(dao.obtenerEntrenamientos())
+        }
+    }
+
+    fun limpiarBaseTemporal() {
+        viewModelScope.launch {
+            dao.limpiarTodo()
         }
     }
 }

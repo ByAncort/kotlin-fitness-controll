@@ -1,32 +1,41 @@
 package ui.Principal
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import model.EntrenamientoEntity
+import ui.Entrenamiento.Vacio.EntrenamientoVacioViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrincipalScreen(
     onGenerarEntrenamiento: () -> Unit = {},
     onEntrenamientoVacio: () -> Unit = {},
-    onAbrirRutina: (String) -> Unit = {}
+    onAbrirRutina: (String) -> Unit = {},
+    viewModel: EntrenamientoVacioViewModel = viewModel()
 ) {
-    
-    val rutinas = listOf("Push-Pull-Legs", "Full Body", "Brazos y Hombros", "Espalda y Pecho")
+    // Estado para guardar la lista de rutinas cargadas desde la BD
+    var rutinas by remember { mutableStateOf<List<EntrenamientoEntity>>(emptyList()) }
 
-    
+    // Carga inicial de rutinas desde Room (solo una vez)
+    LaunchedEffect(Unit) {
+        viewModel.obtenerEntrenamientos { lista ->
+            rutinas = lista
+        }
+    }
+
+    // 🎨 Paleta tipo Tailwind Dark
     val fondo = Color(0xFF0f172a)
     val cardColor = Color(0xFF1e293b)
     val borderColor = Color(0xFF334155)
@@ -41,14 +50,6 @@ fun PrincipalScreen(
                 title = { Text("Entrenamientos", color = textPrimary) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = cardColor)
             )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onEntrenamientoVacio,
-                containerColor = accent,
-                icon = { Icon(Icons.Default.Add, contentDescription = "Nuevo", tint = Color.White) },
-                text = { Text("Nuevo", color = Color.White) }
-            )
         }
     ) { innerPadding ->
         Column(
@@ -59,7 +60,7 @@ fun PrincipalScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
 
-            
+            // --- Sección: Crear nuevo entrenamiento ---
             Text(
                 text = "Nuevo entrenamiento",
                 style = MaterialTheme.typography.titleMedium.copy(
@@ -87,15 +88,18 @@ fun PrincipalScreen(
                     onClick = onEntrenamientoVacio,
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = accent),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp, brush = androidx.compose.ui.graphics.SolidColor(accent))
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        width = 1.dp,
+                        brush = androidx.compose.ui.graphics.SolidColor(accent)
+                    )
                 ) {
                     Text("Empezar vacío", color = accent)
                 }
             }
 
-            
+            // --- Sección: Rutinas guardadas ---
             Text(
-                text = "Rutinas guardadas",
+                text = "Rutinas recientes",
                 style = MaterialTheme.typography.titleMedium.copy(
                     color = textPrimary,
                     fontWeight = FontWeight.Bold
@@ -120,7 +124,7 @@ fun PrincipalScreen(
                         Card(
                             colors = CardDefaults.cardColors(containerColor = cardColor),
                             shape = RoundedCornerShape(12.dp),
-                            onClick = { onAbrirRutina(rutina) },
+                            onClick = { onAbrirRutina(rutina.nombre) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(
@@ -129,14 +133,14 @@ fun PrincipalScreen(
                                     .padding(16.dp)
                             ) {
                                 Text(
-                                    text = rutina,
+                                    text = rutina.nombre,
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         color = textPrimary,
                                         fontWeight = FontWeight.SemiBold
                                     )
                                 )
                                 Text(
-                                    text = "Toque para abrir",
+                                    text = "Toca para abrir",
                                     style = MaterialTheme.typography.bodySmall.copy(color = textSecondary)
                                 )
                             }
