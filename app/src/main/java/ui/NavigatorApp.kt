@@ -5,6 +5,10 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import ui.Entrenamiento.Vacio.EntrenamientoVacioScreen
+import ui.Login.LoginScreen
+import ui.Principal.PrincipalScreen
+import ui.Register.RegistrarseScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,12 +51,22 @@ fun NavigatorApp() {
                     // o mostrar un loader mientras el ViewModel procesa
                 },
                 onEntrenamientoVacio = {
-                    // Aquí podrías navegar a un editor de rutina vacía
+                    nav.navigate(Route.EntrenamientoVacio.path)
                 },
                 onAbrirRutina = { rutina ->
                     // Aquí podrías abrir una pantalla de detalle de esa rutina
                 }
 
+            )
+        }
+        composable(Route.EntrenamientoVacio.path) {
+            EntrenamientoVacioScreen (
+                onGuardarEntrenamiento = { nombre, ejercicios ->
+                    nav.popBackStack()
+                },
+                onCancelar = {
+                    nav.popBackStack()
+                }
             )
         }
 

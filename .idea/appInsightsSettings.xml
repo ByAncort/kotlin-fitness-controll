@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="AppInsightsSettings">
+    <option name="selectedTabId" value="Android Vitals" />
     <option name="tabSettings">
       <map>
         <entry key="Firebase Crashlytics">
@@ -9,9 +10,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.app.myfitnessapp" />
-                  <option name="mobileSdkAppId" value="1:178763554403:android:e71080e0e5223f9384e256" />
-                  <option name="projectId" value="fitnessapp-9ba20" />
-                  <option name="projectNumber" value="178763554403" />
+                  <option name="mobileSdkAppId" value="1:514193092085:android:d35d5c394975afe9ec44bc" />
+                  <option name="projectId" value="movil-f9ad6" />
+                  <option name="projectNumber" value="514193092085" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
